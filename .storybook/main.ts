@@ -13,12 +13,13 @@ const config: StorybookConfig = {
     "@storybook/addon-a11y",
     "@storybook/addon-docs",
   ],
+  staticDirs: ["../public"],
   framework: "@storybook/nextjs-vite",
   viteFinal: async (viteConfig) => {
     viteConfig.resolve = viteConfig.resolve || {};
     viteConfig.resolve.alias = {
       ...viteConfig.resolve.alias,
-      '@': path.resolve(__dirname, '../../frontend/src'),
+      '@': path.resolve(__dirname, '../src'),
     };
     return viteConfig;
   },

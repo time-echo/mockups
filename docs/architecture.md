@@ -2,13 +2,14 @@
 
 ## Overview
 
-The `mockups` workspace provides an isolated Storybook catalog alongside `frontend` and `time_echo`. It renders TimeEcho components in isolation without modifying or introducing dependencies into the production frontend.
+The `mockups` workspace is the TimeEcho design system: a self-contained Storybook catalog alongside `time-echo-web` and `time_echo`. It carries its own copy of the web app's UI/UX (components, features, design tokens, fonts, i18n and public assets), so it builds without `../time-echo-web`.
 
 ## Key Architecture Decisions
 
 ### 1. Isolated Folder (`mockups/`)
 - Resides on branch `feat/storybook-mockups` in its own git repository.
-- Consumes components, styling tokens, fonts, and localization from `../frontend` via path aliases configured in `tsconfig.json` and Vite's `resolve.alias`.
+- `src/` mirrors `time-echo-web/src` (`app`, `components`, `features`, `lib`, `types`, `i18n`; API routes and `proxy.ts` omitted) and `public/` holds the same icons and images. `@/*` resolves to `./src/*` via `tsconfig.json` and Vite's `resolve.alias`; Storybook serves `public/` as static assets.
+- Design tokens (colors) live in `src/app/globals.css`; fonts (Fraunces, Courier Prime, IBM Plex Sans) in `src/lib/fonts.ts`. Keep both identical to `time-echo-web` when the web UI changes.
 
 ### 2. Framework & Tooling
 - `@storybook/nextjs-vite` (Storybook 10) for React 19 and Next.js 16 support.
