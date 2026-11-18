@@ -4,3 +4,5 @@ allowBuilds:
   esbuild: true
   sharp: false
   unrs-resolver: false
+overrides:
+  '@parcel/watcher': 2.0.7

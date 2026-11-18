@@ -67,9 +67,11 @@ export default function HomePage() {
   const [motivation, setMotivation] = useState(7);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [minCustomDate] = useState(
-    () => new Date(Date.now() + 86400000).toISOString().split("T")[0],
-  );
+  const [minCustomDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
 
   const currentDateFormatted = formatLocaleDate(
     new Date().toISOString(),

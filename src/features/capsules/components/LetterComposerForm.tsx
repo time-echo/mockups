@@ -58,7 +58,7 @@ export function LetterComposerForm({
 
   const minDate = React.useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 1);
+    d.setDate(d.getDate() + 3);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");

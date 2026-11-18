@@ -162,11 +162,12 @@ export function useLetterComposer(
     }
 
     const scheduledTime = new Date(form.scheduledAt).getTime();
-    const now = new Date();
-    const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const minCustom = new Date();
+    minCustom.setDate(minCustom.getDate() + 3);
+    const minCustomISO = `${minCustom.getFullYear()}-${String(minCustom.getMonth() + 1).padStart(2, "0")}-${String(minCustom.getDate()).padStart(2, "0")}`;
     if (!form.scheduledAt || isNaN(scheduledTime)) {
       errs.scheduledAt = t("composer.errors.dateRequired");
-    } else if (form.scheduledAt <= todayISO) {
+    } else if (form.scheduledAt < minCustomISO) {
       errs.scheduledAt = t("composer.errors.dateFuture");
     }
 
@@ -183,9 +184,10 @@ export function useLetterComposer(
     }
 
     const scheduledTime = new Date(form.scheduledAt).getTime();
-    const now = new Date();
-    const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    if (form.scheduledAt <= todayISO || scheduledTime <= Date.now()) {
+    const minCustom = new Date();
+    minCustom.setDate(minCustom.getDate() + 3);
+    const minCustomISO = `${minCustom.getFullYear()}-${String(minCustom.getMonth() + 1).padStart(2, "0")}-${String(minCustom.getDate()).padStart(2, "0")}`;
+    if (form.scheduledAt < minCustomISO || scheduledTime <= Date.now()) {
       const dateErr = t("composer.errors.dateFuture");
       setError(dateErr);
       throw new Error(dateErr);
