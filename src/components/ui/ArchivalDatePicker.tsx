@@ -79,6 +79,9 @@ export function ArchivalDatePicker({
     if (parsedValue) {
       return { year: parsedValue.year, month: parsedValue.month };
     }
+    if (minParsed) {
+      return { year: minParsed.year, month: minParsed.month };
+    }
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() };
   });
@@ -130,18 +133,19 @@ export function ArchivalDatePicker({
   }, [locale, viewDate.year, viewDate.month]);
 
   const displayFormatted = useMemo(() => {
-    if (!value) {
+    const targetIso = value || effectiveMin;
+    if (!targetIso) {
       return (
         placeholder ||
         (locale === "es" ? "Elige una fecha..." : "Select a date...")
       );
     }
-    return formatLocaleDate(value, locale, {
+    return formatLocaleDate(targetIso, locale, {
       day: "numeric",
       month: "long",
       year: "numeric",
     });
-  }, [value, locale, placeholder]);
+  }, [value, effectiveMin, locale, placeholder]);
 
   const canGoPrevYear = useMemo(() => {
     if (!minParsed) return true;
@@ -304,7 +308,7 @@ export function ArchivalDatePicker({
           className,
         )}
       >
-        <span className={cn("truncate", !value && "text-foreground-muted")}>
+        <span className="truncate">
           {displayFormatted}
         </span>
         <CalendarIcon

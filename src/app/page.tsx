@@ -51,7 +51,12 @@ export default function HomePage() {
   const [content, setContent] = useState("");
   const [email, setEmail] = useState("");
   const [selectedHorizonDays, setSelectedHorizonDays] = useState<number>(365);
-  const [customDate, setCustomDate] = useState<string>("");
+  const [minCustomDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  const [customDate, setCustomDate] = useState<string>(minCustomDate);
   const [showCustomDate, setShowCustomDate] = useState<boolean>(false);
   const [selectedStampId, setSelectedStampId] = useState<string | null>(null);
   const [isStampPickerOpen, setIsStampPickerOpen] = useState<boolean>(false);
@@ -67,11 +72,6 @@ export default function HomePage() {
   const [motivation, setMotivation] = useState(7);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [minCustomDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 3);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  });
 
   const currentDateFormatted = formatLocaleDate(
     new Date().toISOString(),
@@ -86,6 +86,9 @@ export default function HomePage() {
   const handleToggleCustomDate = () => {
     setShowCustomDate(true);
     setSelectedHorizonDays(0);
+    if (!customDate || customDate < minCustomDate) {
+      setCustomDate(minCustomDate);
+    }
   };
 
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
@@ -107,12 +110,18 @@ export default function HomePage() {
 
     const deliverDate = new Date();
     if (showCustomDate && customDate) {
+      if (customDate < minCustomDate) {
+        setIsSubmitting(false);
+        return;
+      }
       const parsed = new Date(customDate);
       if (!isNaN(parsed.getTime())) {
         deliverDate.setTime(parsed.getTime());
       } else {
-        deliverDate.setDate(deliverDate.getDate() + 365);
+        deliverDate.setDate(deliverDate.getDate() + 3);
       }
+    } else if (showCustomDate) {
+      deliverDate.setDate(deliverDate.getDate() + 3);
     } else {
       deliverDate.setDate(deliverDate.getDate() + (selectedHorizonDays || 365));
     }

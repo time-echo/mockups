@@ -185,17 +185,7 @@ export default function DashboardPage() {
                             )}
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                          <button
-                            type="button"
-                            onClick={() => archiveCapsule(letter.id)}
-                            className="border border-crease text-foreground-muted hover:text-ink hover:border-ink/40 hover:bg-manila/40 rounded-xs px-3.5 py-1.5 text-xs font-medium uppercase tracking-wider font-letter inline-flex items-center justify-center gap-1.5 min-h-[44px] transition-all cursor-pointer bg-transparent active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-wax"
-                            title={t("dashboard.archiveLetter")}
-                          >
-                            <Archive size={14} />
-                            <span>{t("dashboard.archive")}</span>
-                          </button>
-
+                        <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
                           {hasRevealedReality ? (
                             <Link
                               href={`/letters/${letter.id}`}
@@ -454,17 +444,7 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => archiveCapsule(letter.id)}
-                        className="border border-crease text-foreground-muted hover:text-ink hover:border-ink/40 hover:bg-manila/40 rounded-xs px-3.5 py-1.5 text-xs font-medium uppercase tracking-wider font-letter inline-flex items-center justify-center gap-1.5 min-h-[44px] transition-all cursor-pointer bg-transparent active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-wax"
-                        title={t("dashboard.archiveLetter")}
-                      >
-                        <Archive size={14} />
-                        <span>{t("dashboard.archive")}</span>
-                      </button>
-
+                    <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
                       {hasRevealedReality ? (
                         <Link
                           href={`/letters/${letter.id}`}

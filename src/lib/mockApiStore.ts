@@ -189,8 +189,21 @@ class MockApiStore {
       throw new Error(`Capsule with id "${id}" not found.`);
     }
 
+    const current = this.letters[index];
+    const isArrived =
+      current.status === "delivered" ||
+      current.status === "opened" ||
+      current.deliveredAt != null ||
+      new Date(current.scheduledAt) <= new Date();
+
+    if (isArrived) {
+      throw new Error(
+        `Cannot archive letter with id "${id}" because it has already arrived.`,
+      );
+    }
+
     const updated: Letter = {
-      ...this.letters[index],
+      ...current,
       status: "archived",
       updatedAt: new Date().toISOString(),
     };
