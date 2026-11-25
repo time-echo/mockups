@@ -7,6 +7,9 @@ import LetterDetailPage from "@/app/letters/[id]/page";
 import DashboardPage from "@/app/dashboard/page";
 import AnalyticsPage from "@/app/analytics/page";
 import SettingsPage from "@/app/settings/page";
+import LoginPage from "@/app/login/page";
+import ForgotPasswordPage from "@/app/forgot-password/page";
+import ResetPasswordPage from "@/app/reset-password/[token]/page";
 
 const meta: Meta = {
   title: "Tier 5 - Pages/Figma Frames",
@@ -129,6 +132,70 @@ export const Settings_Sections: Story = {
     nextjs: {
       navigation: {
         pathname: "/settings",
+      },
+    },
+  },
+};
+
+export const Settings_First_Time_Password: Story = {
+  name: "Settings-First-Time-Password",
+  render: () => (
+    <AppShell>
+      <SettingsPage initialHasPassword={false} initialGoogleLinked={true} />
+    </AppShell>
+  ),
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: "/settings",
+      },
+    },
+  },
+};
+
+export const Login_Auth: Story = {
+  name: "Login-Auth",
+  render: () => (
+    <AppShell>
+      <LoginPage />
+    </AppShell>
+  ),
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: "/login",
+      },
+    },
+  },
+};
+
+export const Forgot_Password: Story = {
+  name: "Forgot-Password",
+  render: () => (
+    <AppShell>
+      <ForgotPasswordPage />
+    </AppShell>
+  ),
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: "/forgot-password",
+      },
+    },
+  },
+};
+
+export const Reset_Password: Story = {
+  name: "Reset-Password",
+  render: () => (
+    <AppShell>
+      <ResetPasswordPage />
+    </AppShell>
+  ),
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: "/reset-password/demo-reset-token",
       },
     },
   },
