@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useTimeEcho } from "@/lib/context/TimeEchoContext";
 import { PredictionCategory } from "@/types/timeecho";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Lock,
-  Clock,
-  Sparkles,
   ShieldCheck,
   Mail,
+  Sparkles,
   ChevronLeft,
   ChevronRight,
   RotateCw,
@@ -18,7 +18,19 @@ import {
 } from "lucide-react";
 import { cn, formatLocaleDate } from "@/lib/utils";
 import { Stamp, StampPickerModal } from "@/components/stamps";
+import { ArchivalLoader } from "@/components/ui/ArchivalLoader";
 import { ArchivalDatePicker } from "@/components/ui/ArchivalDatePicker";
+import { Slider } from "@/components/ui/Slider";
+import { SocialProof } from "@/features/landing/components/SocialProof";
+import {
+  InspireMeDrawer,
+  InspirePromptSelection,
+  DEFAULT_INSPIRATION_CATEGORY_ID,
+  InspirationCategoryId,
+  insertPromptIntoDraft,
+  hasPromptInDraft,
+  removePromptFromDraft,
+} from "@/features/capsules";
 
 export default function HomePage() {
   const router = useRouter();
@@ -60,6 +72,18 @@ export default function HomePage() {
   const [showCustomDate, setShowCustomDate] = useState<boolean>(false);
   const [selectedStampId, setSelectedStampId] = useState<string | null>(null);
   const [isStampPickerOpen, setIsStampPickerOpen] = useState<boolean>(false);
+  const [isInspireOpen, setIsInspireOpen] = useState<boolean>(false);
+  const [activeInspirationCategory, setActiveInspirationCategory] =
+    useState<InspirationCategoryId>(DEFAULT_INSPIRATION_CATEGORY_ID);
+  const [appliedPrompt, setAppliedPrompt] = useState<{
+    id: string;
+    text: string;
+  } | null>(null);
+
+  const activePromptId =
+    appliedPrompt && hasPromptInDraft(content, appliedPrompt.text)
+      ? appliedPrompt.id
+      : null;
 
   const [predictionCity, setPredictionCity] = useState("");
   const [predictionCareer, setPredictionCareer] = useState("");
@@ -83,6 +107,14 @@ export default function HomePage() {
     setShowCustomDate(false);
   };
 
+  const handleWriteLetterClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const textarea = contentTextareaRef.current;
+    if (!textarea) return;
+    textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+    textarea.focus({ preventScroll: true });
+  };
+
   const handleToggleCustomDate = () => {
     setShowCustomDate(true);
     setSelectedHorizonDays(0);
@@ -92,14 +124,20 @@ export default function HomePage() {
   };
 
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [isContentTouched, setIsContentTouched] = useState(false);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setHasAttemptedSubmit(true);
 
-    if (content.trim().length < 80) {
+    const words = content.trim()
+      ? content.trim().split(/\s+/).filter(Boolean)
+      : [];
+    if (
+      words.some((w) => w.length > 45) ||
+      words.length < 10 ||
+      content.trim().length < 80
+    ) {
       contentTextareaRef.current?.focus();
       return;
     }
@@ -108,22 +146,17 @@ export default function HomePage() {
 
     setIsSubmitting(true);
 
-    const deliverDate = new Date();
-    if (showCustomDate && customDate) {
-      if (customDate < minCustomDate) {
+    let scheduledDateStr = "";
+    if (showCustomDate) {
+      if (!customDate || customDate < minCustomDate) {
         setIsSubmitting(false);
         return;
       }
-      const parsed = new Date(customDate);
-      if (!isNaN(parsed.getTime())) {
-        deliverDate.setTime(parsed.getTime());
-      } else {
-        deliverDate.setDate(deliverDate.getDate() + 3);
-      }
-    } else if (showCustomDate) {
-      deliverDate.setDate(deliverDate.getDate() + 3);
+      scheduledDateStr = customDate;
     } else {
+      const deliverDate = new Date();
       deliverDate.setDate(deliverDate.getDate() + (selectedHorizonDays || 365));
+      scheduledDateStr = `${deliverDate.getFullYear()}-${String(deliverDate.getMonth() + 1).padStart(2, "0")}-${String(deliverDate.getDate()).padStart(2, "0")}`;
     }
 
     const predictionsList: Array<{
@@ -138,11 +171,11 @@ export default function HomePage() {
     ].filter((p) => p.prediction.trim().length > 0);
 
     try {
-      const capsule = await createCapsule({
+      const createdLetter = await createCapsule({
         title: t("landing.defaultTitle"),
         content,
         email,
-        scheduledAt: deliverDate.toISOString(),
+        scheduledAt: scheduledDateStr,
         stampId: selectedStampId || undefined,
         emotionalSnapshot: {
           happinessLevel: happiness,
@@ -152,96 +185,134 @@ export default function HomePage() {
         predictions: predictionsList,
       });
 
-      router.push(`/letters/success?id=${encodeURIComponent(capsule.id)}`);
-    } catch (err) {
-      console.error(err);
+      router.push(`/letters/success?id=${encodeURIComponent(createdLetter.id)}`);
+    } catch {
       setIsSubmitting(false);
     }
   };
 
   const charCount = content.length;
-  const isContentTooShort = content.trim().length < 80;
-  const showContentError =
-    isContentTooShort &&
-    (hasAttemptedSubmit || (isContentTouched && content.length > 0));
+  const contentWords = content.trim()
+    ? content.trim().split(/\s+/).filter(Boolean)
+    : [];
+  const contentError = (() => {
+    if (!content.trim()) {
+      return t("composer.errors.contentRequired");
+    }
+    if (contentWords.some((w) => w.length > 45)) {
+      return t("composer.errors.wordTooLong");
+    }
+    if (contentWords.length < 10) {
+      return t("composer.errors.contentMinWords");
+    }
+    if (content.trim().length < 80) {
+      return t("landing.minCharsError");
+    }
+    return null;
+  })();
+  const showContentError = Boolean(contentError) && hasAttemptedSubmit;
+  const counterProgress = Math.min(100, (charCount / 80) * 100);
+  const counterText =
+    charCount === 0
+      ? t("landing.counterEmpty")
+      : charCount < 80
+        ? t("landing.counterProgress", { remaining: 80 - charCount })
+        : t("landing.counterReady", { count: charCount });
 
   return (
     <div className="space-y-24 max-w-6xl mx-auto -mt-4 font-ui animate-fade-in text-foreground">
-      {/* ===================================================================
-          HERO SECTION: 2-COLUMN GRID (Features + Live Letter Card)
-          =================================================================== */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pt-2">
-        {/* Left Column: Headlines & 3 Archival Feature Cards */}
-        <div className="lg:col-span-5 space-y-7 lg:sticky lg:top-24">
-          <div className="space-y-4">
-            <h1 className="font-serif-editorial text-4xl sm:text-6xl font-normal text-foreground leading-tight tracking-tight">
-              {t("landing.heroTitleLine1")}
-              <br />
-              {t("landing.heroTitleLine2")}
+        <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+          <div className="space-y-3">
+            <h1 className="font-serif-editorial text-[2rem] sm:text-5xl font-normal text-foreground leading-[1.1] tracking-tight">
+              {t("landing.heroTitle")}
             </h1>
 
-            <p className="font-letter text-xs sm:text-sm text-foreground-muted leading-relaxed max-w-xl">
-              {t("landing.heroSubtitle")}
+            <p className="font-serif-editorial italic text-lg sm:text-xl text-foreground-muted">
+              {t("landing.heroTitleLine1")} {t("landing.heroTitleLine2")}
+            </p>
+
+            <p className="font-letter text-xs sm:text-sm text-foreground leading-relaxed max-w-xl">
+              {t("landing.heroTrustLine")}
             </p>
           </div>
 
-          <div className="space-y-3 pt-2">
-            <div className="paper-sheet rounded-xs p-4 border border-crease flex items-start gap-3.5">
-              <div className="w-8 h-8 rounded-xs bg-wax/10 text-wax flex items-center justify-center shrink-0 border border-wax/20">
-                <Lock size={16} />
-              </div>
-              <div className="space-y-0.5">
-                <h2 className="text-xs font-letter font-semibold uppercase tracking-wider text-foreground">
-                  {t("landing.trustPrivate")}
-                </h2>
-                <p className="text-xs font-letter text-foreground-muted leading-relaxed">
-                  {t("landing.trustPrivateDesc")}
-                </p>
-              </div>
-            </div>
+          <a
+            href="#landing-content"
+            onClick={handleWriteLetterClick}
+            className="lg:hidden w-full bg-wax hover:bg-wax-hover text-on-wax rounded-xs px-6 py-3 text-xs font-semibold tracking-widest uppercase font-letter inline-flex items-center justify-center gap-2 shadow-xs min-h-[48px] transition-colors"
+          >
+            {t("landing.heroCta")}
+          </a>
 
-            <div className="paper-sheet rounded-xs p-4 border border-crease flex items-start gap-3.5">
-              <div className="w-8 h-8 rounded-xs bg-ink/10 text-ink flex items-center justify-center shrink-0 border border-ink/20">
-                <Clock size={16} />
-              </div>
-              <div className="space-y-0.5">
-                <h2 className="text-xs font-letter font-semibold uppercase tracking-wider text-foreground">
-                  {t("landing.trustSchedule")}
-                </h2>
-                <p className="text-xs font-letter text-foreground-muted leading-relaxed">
-                  {t("landing.trustScheduleDesc")}
-                </p>
-              </div>
-            </div>
+          <div className="paper-sheet rounded-xs border border-crease border-l-4 border-l-wax p-4 sm:p-5 space-y-3">
+            <h2 className="font-serif-editorial text-xl sm:text-2xl font-semibold text-foreground leading-snug">
+              {t("landing.trustReality")}
+            </h2>
+            <p className="text-xs font-letter text-foreground-muted leading-relaxed">
+              {t("landing.heroRealityDesc")}
+            </p>
 
-            <div className="paper-sheet rounded-xs p-4 border border-crease flex items-start gap-3.5">
-              <div className="w-8 h-8 rounded-xs bg-ink/10 text-ink flex items-center justify-center shrink-0 border border-ink/20">
-                <Sparkles size={16} />
-              </div>
-              <div className="space-y-0.5">
-                <h2 className="text-xs font-letter font-semibold uppercase tracking-wider text-foreground">
-                  {t("landing.trustReality")}
-                </h2>
-                <p className="text-xs font-letter text-foreground-muted leading-relaxed">
-                  {t("landing.trustRealityDesc")}
+            <div className="hidden lg:block border-t border-dashed border-crease pt-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-letter text-foreground-muted">
+                  {t("landing.demoQCareer")}
                 </p>
+                <span className="postmark-stamp text-[10px] py-0.5 px-2 inline-block">
+                  {t("landing.heroExampleLabel")}
+                </span>
               </div>
+              <dl className="grid grid-cols-2 text-xs font-letter">
+                <div className="pr-3 space-y-0.5">
+                  <dt className="text-foreground-muted">
+                    {t("landing.demoPastPredLabel")}
+                  </dt>
+                  <dd className="font-semibold text-foreground">
+                    {t("landing.demoPastCareer")}
+                  </dd>
+                </div>
+                <div className="pl-3 border-l border-crease space-y-0.5">
+                  <dt className="text-foreground-muted">
+                    {t("landing.demoRealityLabel")}
+                  </dt>
+                  <dd className="font-semibold text-foreground">
+                    {t("landing.demoRealityCareer")}
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
+
+          <ul className="hidden sm:block space-y-2.5 border-t border-crease pt-4 text-xs font-letter text-foreground-muted leading-relaxed">
+            <li>
+              <span className="font-semibold uppercase tracking-wider text-foreground">
+                {t("landing.trustPrivate")}.
+              </span>{" "}
+              {t("landing.trustPrivateDesc")}
+            </li>
+            <li>
+              <span className="font-semibold uppercase tracking-wider text-foreground">
+                {t("landing.trustSchedule")}.
+              </span>{" "}
+              {t("landing.trustScheduleDesc")}
+            </li>
+          </ul>
         </div>
 
-        <div className="lg:col-span-7 paper-sheet rounded-xs p-6 sm:p-8 space-y-6 border border-crease">
+        <div className="lg:col-span-7 paper-sheet rounded-xs p-4 sm:p-8 space-y-6 border border-crease">
           <div className="flex items-start justify-between border-b border-crease pb-4 gap-4">
             <div>
-              <span className="text-xs font-letter uppercase tracking-widest text-foreground-muted block">
-                {t("landing.step01Label")}
-              </span>
-              <h2 className="font-serif-editorial text-2xl text-foreground font-semibold mt-0.5">
+              <h2 className="font-serif-editorial text-2xl text-foreground font-semibold">
                 {t("landing.writeLetterToFuture")}
               </h2>
               <span className="postmark-stamp text-xs py-0.5 px-2.5 inline-block mt-2">
                 {currentDateFormatted}
               </span>
+              {!selectedStampId && (
+                <p className="mt-2 max-w-[24ch] text-[11px] font-letter text-foreground-muted leading-snug">
+                  {t("landing.stampHint")}
+                </p>
+              )}
             </div>
 
             <div className="shrink-0 flex flex-col items-center">
@@ -282,19 +353,31 @@ export default function HomePage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label
-                htmlFor="landing-content"
-                className="text-xs font-letter font-semibold text-foreground uppercase tracking-wider block"
-              >
-                {t("landing.yourLetter")}
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  htmlFor="landing-content"
+                  className="text-xs font-letter font-semibold text-foreground uppercase tracking-wider block"
+                >
+                  {t("landing.yourLetter")}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsInspireOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={isInspireOpen}
+                  aria-label={t("inspireMe.buttonAria")}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs border border-crease bg-manila/50 hover:border-wax hover:bg-manila text-foreground font-letter text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
+                >
+                  <Sparkles size={13} className="text-wax shrink-0" />
+                  <span>{t("inspireMe.buttonLabel")}</span>
+                </button>
+              </div>
               <textarea
                 id="landing-content"
                 ref={contentTextareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                onBlur={() => setIsContentTouched(true)}
-                placeholder={t("landing.letterPlaceholder")}
+                placeholder={t("landing.letterPlaceholderGuide")}
                 rows={7}
                 maxLength={2000}
                 required
@@ -305,28 +388,30 @@ export default function HomePage() {
                     : "landing-content-counter"
                 }
                 className={cn(
-                  "w-full p-4 sm:p-5 border rounded-xs font-letter text-sm leading-loose text-foreground placeholder:text-foreground-muted focus:outline-none transition-all shadow-inner bg-transparent",
+                  "w-full p-4 sm:p-5 border rounded-xs font-letter text-base sm:text-sm leading-loose text-foreground placeholder:text-foreground-muted focus:outline-none transition-all shadow-inner bg-transparent",
                   showContentError
                     ? "border-wax bg-wax/5 focus:border-wax"
                     : "border-crease focus:border-wax",
                 )}
               />
-              <div className="flex justify-between items-center text-[11px] font-letter text-foreground-muted pt-1">
+              <div className="h-0.5 w-full bg-crease/60" aria-hidden="true">
+                <div
+                  className="h-full bg-ink transition-[width] duration-200"
+                  style={{ width: `${counterProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-start gap-3 text-[11px] font-letter text-foreground-muted pt-1">
                 <span className="italic">{t("landing.onlyYouCanSee")}</span>
                 <span
                   id="landing-content-counter"
                   className={cn(
-                    "transition-colors",
-                    showContentError
-                      ? "text-wax font-semibold"
-                      : charCount >= 80
-                        ? "text-foreground"
-                        : "text-foreground-muted",
+                    "text-right transition-colors",
+                    charCount >= 80
+                      ? "text-ink font-semibold"
+                      : "text-foreground-muted",
                   )}
                 >
-                  {charCount < 80
-                    ? t("landing.charCounterMin", { count: charCount })
-                    : `${charCount} / 2000`}
+                  {counterText}
                 </span>
               </div>
               {showContentError && (
@@ -335,7 +420,7 @@ export default function HomePage() {
                   className="text-[11px] font-letter text-wax pt-0.5 animate-fade-in"
                   aria-live="polite"
                 >
-                  {t("landing.minCharsError")}
+                  {contentError}
                 </p>
               )}
             </div>
@@ -428,7 +513,7 @@ export default function HomePage() {
                     <ArchivalDatePicker
                       id="landing-custom-date"
                       value={customDate}
-                      onChange={(date) => setCustomDate(date)}
+                      onChange={setCustomDate}
                       min={minCustomDate}
                       locale={locale}
                       placeholder={t("landing.chooseSpecificDate")}
@@ -439,13 +524,13 @@ export default function HomePage() {
             </div>
 
             <div className="border-t border-crease pt-5 space-y-4">
-              <div className="border-b border-crease pb-2">
-                <span className="text-xs font-letter uppercase tracking-widest text-foreground-muted block">
-                  {t("landing.annexPredictions")}
-                </span>
-                <label className="text-xs font-letter font-semibold text-foreground uppercase tracking-wider block mt-0.5">
-                  {t("landing.predictionsOptional")}
-                </label>
+              <div className="border-b border-crease pb-2 space-y-0.5">
+                <h3 className="font-serif-editorial text-lg font-semibold text-foreground">
+                  {t("landing.predictionsTitle")}
+                </h3>
+                <p className="text-[11px] font-letter text-foreground-muted">
+                  {t("landing.predictionsHint")}
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-letter">
@@ -463,7 +548,7 @@ export default function HomePage() {
                     value={predictionCity}
                     onChange={(e) => setPredictionCity(e.target.value)}
                     placeholder={t("landing.predPlaceholder")}
-                    className="w-full paper-sheet rounded-xs px-3 py-2 text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
+                    className="w-full paper-sheet rounded-xs px-3 py-2.5 min-h-[44px] text-base sm:text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
                   />
                 </div>
 
@@ -481,7 +566,7 @@ export default function HomePage() {
                     value={predictionCareer}
                     onChange={(e) => setPredictionCareer(e.target.value)}
                     placeholder={t("landing.predPlaceholder")}
-                    className="w-full paper-sheet rounded-xs px-3 py-2 text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
+                    className="w-full paper-sheet rounded-xs px-3 py-2.5 min-h-[44px] text-base sm:text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
                   />
                 </div>
 
@@ -499,7 +584,7 @@ export default function HomePage() {
                     value={predictionSalary}
                     onChange={(e) => setPredictionSalary(e.target.value)}
                     placeholder={t("landing.predPlaceholder")}
-                    className="w-full paper-sheet rounded-xs px-3 py-2 text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
+                    className="w-full paper-sheet rounded-xs px-3 py-2.5 min-h-[44px] text-base sm:text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
                   />
                 </div>
 
@@ -517,7 +602,7 @@ export default function HomePage() {
                     value={predictionRelationship}
                     onChange={(e) => setPredictionRelationship(e.target.value)}
                     placeholder={t("landing.predPlaceholder")}
-                    className="w-full paper-sheet rounded-xs px-3 py-2 text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
+                    className="w-full paper-sheet rounded-xs px-3 py-2.5 min-h-[44px] text-base sm:text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
                   />
                 </div>
 
@@ -535,74 +620,43 @@ export default function HomePage() {
                     value={predictionAchievement}
                     onChange={(e) => setPredictionAchievement(e.target.value)}
                     placeholder={t("landing.predPlaceholder")}
-                    className="w-full paper-sheet rounded-xs px-3 py-2 text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
+                    className="w-full paper-sheet rounded-xs px-3 py-2.5 min-h-[44px] text-base sm:text-xs border border-crease font-letter text-foreground placeholder:text-foreground-muted focus:border-wax focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             <div className="border-t border-crease pt-5 space-y-3">
-              <div className="border-b border-crease pb-1.5">
-                <span className="text-xs font-letter uppercase tracking-widest text-foreground-muted block">
-                  {t("landing.annexEmotionalBadge")}
-                </span>
-                <label className="text-xs font-letter font-semibold text-foreground uppercase tracking-wider block mt-0.5">
-                  {t("landing.howDoYouFeelToday")}
-                </label>
+              <div className="border-b border-crease pb-2 space-y-0.5">
+                <h3 className="font-serif-editorial text-lg font-semibold text-foreground">
+                  {t("landing.feelTitle")}
+                </h3>
+                <p className="text-[11px] font-letter text-foreground-muted">
+                  {t("landing.feelHint")}
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-letter">
-                <div className="rounded-xs p-3 bg-crease/15 border border-crease/60 space-y-1.5">
-                  <div className="flex justify-between items-center font-semibold text-foreground">
-                    <span>{t("landing.happiness")}</span>
-                    <span className="text-foreground-muted">
-                      {happiness} / 10
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
+              <div className="grid grid-cols-1 gap-3">
+                <div className="rounded-xs px-2 sm:px-3 py-2 bg-crease/15 border border-crease/60">
+                  <Slider
+                    label={t("landing.happiness")}
                     value={happiness}
-                    onChange={(e) => setHappiness(Number(e.target.value))}
-                    aria-label={t("landing.happiness")}
-                    className="w-full accent-wax cursor-pointer"
+                    onChange={setHappiness}
                   />
                 </div>
-
-                <div className="rounded-xs p-3 bg-crease/15 border border-crease/60 space-y-1.5">
-                  <div className="flex justify-between items-center font-semibold text-foreground">
-                    <span>{t("landing.anxiety")}</span>
-                    <span className="text-foreground-muted">
-                      {anxiety} / 10
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
+                <div className="rounded-xs px-2 sm:px-3 py-2 bg-crease/15 border border-crease/60">
+                  <Slider
+                    label={t("landing.anxiety")}
                     value={anxiety}
-                    onChange={(e) => setAnxiety(Number(e.target.value))}
-                    aria-label={t("landing.anxiety")}
-                    className="w-full accent-wax cursor-pointer"
+                    onChange={setAnxiety}
+                    accentColor="ink"
                   />
                 </div>
-
-                <div className="rounded-xs p-3 bg-crease/15 border border-crease/60 space-y-1.5">
-                  <div className="flex justify-between items-center font-semibold text-foreground">
-                    <span>{t("landing.motivation")}</span>
-                    <span className="text-foreground-muted">
-                      {motivation} / 10
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
+                <div className="rounded-xs px-2 sm:px-3 py-2 bg-crease/15 border border-crease/60">
+                  <Slider
+                    label={t("landing.motivation")}
                     value={motivation}
-                    onChange={(e) => setMotivation(Number(e.target.value))}
-                    aria-label={t("landing.motivation")}
-                    className="w-full accent-wax cursor-pointer"
+                    onChange={setMotivation}
                   />
                 </div>
               </div>
@@ -621,9 +675,11 @@ export default function HomePage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@email.com"
+                  placeholder={t("landing.emailPlaceholder")}
                   required
-                  className="w-full paper-sheet rounded-xs px-3.5 py-2.5 text-xs font-letter text-foreground border border-crease placeholder:text-foreground-muted focus:border-wax focus:outline-none min-h-[44px]"
+                  className="w-full paper-sheet rounded-xs px-3.5 py-2.5 text-base sm:text-xs font-letter text-foreground border border-crease placeholder:text-foreground-muted focus:border-wax focus:outline-none min-h-[44px]"
+                  autoComplete="email"
+                  inputMode="email"
                 />
                 <button
                   type="submit"
@@ -643,6 +699,13 @@ export default function HomePage() {
               </div>
             </div>
 
+            <p className="flex items-center gap-2.5 text-[11px] font-letter text-foreground-muted">
+              <span className="postmark-stamp text-[10px] py-0.5 px-2 inline-block">
+                {t("landing.freeBadge")}
+              </span>
+              <span>{t("landing.freeNote")}</span>
+            </p>
+
             <div className="flex items-center justify-center gap-2 text-[11px] font-letter text-foreground-muted pt-2 border-t border-crease">
               <ShieldCheck size={14} className="text-ink" />
               <span>{t("landing.privateAndEncrypted")}</span>
@@ -650,6 +713,8 @@ export default function HomePage() {
           </form>
         </div>
       </section>
+
+      <SocialProof />
 
       <section className="space-y-10">
         <div className="text-center space-y-2">
@@ -730,6 +795,7 @@ export default function HomePage() {
               alt={t("landing.demoTitle")}
               width={1897}
               height={1030}
+              sizes="(max-width: 1024px) 100vw, 1024px"
               className="w-full h-auto block select-none"
               priority
             />
@@ -777,20 +843,118 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="max-w-5xl mx-auto px-4 border-t border-crease pt-8 text-center space-y-3">
+      <section
+        id="protection"
+        className="max-w-5xl mx-auto w-full scroll-mt-24 archival-folder rounded-xs border border-crease p-5 sm:p-8 space-y-6"
+      >
+        <div className="space-y-1.5 max-w-xl">
+          <h2 className="font-serif-editorial text-3xl sm:text-4xl text-foreground font-semibold">
+            {t("landing.protectTitle")}
+          </h2>
+          <p className="text-xs font-letter text-foreground-muted leading-relaxed">
+            {t("landing.protectIntro")}
+          </p>
+        </div>
+
+        <dl className="grid grid-cols-1 md:grid-cols-3 md:divide-x divide-y md:divide-y-0 divide-crease border-y border-crease">
+          <div className="py-4 md:py-5 md:pr-6 space-y-1.5">
+            <dt className="font-serif-editorial text-lg font-semibold text-foreground">
+              <span className="font-letter text-sm text-wax mr-2">§1</span>
+              {t("landing.protectQ1")}
+            </dt>
+            <dd className="text-xs font-letter text-foreground-muted leading-relaxed">
+              {t("landing.protectA1")}
+            </dd>
+          </div>
+          <div className="py-4 md:py-5 md:px-6 space-y-1.5">
+            <dt className="font-serif-editorial text-lg font-semibold text-foreground">
+              <span className="font-letter text-sm text-wax mr-2">§2</span>
+              {t("landing.protectQ2")}
+            </dt>
+            <dd className="text-xs font-letter text-foreground-muted leading-relaxed">
+              {t("landing.protectA2")}
+            </dd>
+          </div>
+          <div className="py-4 md:py-5 md:pl-6 space-y-1.5">
+            <dt className="font-serif-editorial text-lg font-semibold text-foreground">
+              <span className="font-letter text-sm text-wax mr-2">§3</span>
+              {t("landing.protectQ3")}
+            </dt>
+            <dd className="text-xs font-letter text-foreground-muted leading-relaxed">
+              {t("landing.protectA3")}
+            </dd>
+          </div>
+        </dl>
+
+        <Link
+          href="/privacy"
+          className="inline-block text-xs font-letter font-semibold uppercase tracking-wider text-ink underline underline-offset-4 hover:text-wax transition-colors"
+        >
+          {t("landing.protectPrivacyLink")}
+        </Link>
+      </section>
+
+      <section
+        aria-label={t("common.appName")}
+        className="max-w-5xl mx-auto px-4 border-t border-crease pt-8 text-center space-y-3"
+      >
         <div className="flex items-center justify-center gap-1.5 text-xl font-serif-editorial text-foreground select-none font-semibold">
           <span>TimeEcho</span>
         </div>
         <p className="text-xs font-letter text-foreground-muted leading-relaxed">
           {t("footer.sentWithHope")}
         </p>
-      </footer>
+      </section>
+
+      {isSubmitting && (
+        <ArchivalLoader
+          variant="full"
+          className="fixed inset-0 z-50"
+          title={t("composer.sealingVaultModalTitle")}
+          subtitle={t("composer.sealingVaultModalDesc")}
+        />
+      )}
 
       <StampPickerModal
         isOpen={isStampPickerOpen}
         onClose={() => setIsStampPickerOpen(false)}
         selectedStampId={selectedStampId || undefined}
         onSelectStamp={(id) => setSelectedStampId(id || null)}
+      />
+
+      <InspireMeDrawer
+        isOpen={isInspireOpen}
+        onClose={() => setIsInspireOpen(false)}
+        selectedPromptId={activePromptId}
+        onRemovePrompt={() => {
+          if (!appliedPrompt) return;
+          setContent(removePromptFromDraft(content, appliedPrompt.text));
+          setAppliedPrompt(null);
+        }}
+        activeCategoryId={activeInspirationCategory}
+        onCategoryChange={setActiveInspirationCategory}
+        onSelectPrompt={({ promptId, promptText }: InspirePromptSelection) => {
+          if (activePromptId) {
+            return false;
+          }
+          const result = insertPromptIntoDraft(content, promptText, 2000);
+          if (result.exceedsMaxLength) {
+            return false;
+          }
+          setContent(result.content);
+          setAppliedPrompt({ id: promptId, text: promptText.trim() });
+          requestAnimationFrame(() => {
+            const textarea = contentTextareaRef.current;
+            if (!textarea) return;
+            textarea.focus();
+            textarea.setSelectionRange(
+              result.caretPosition,
+              result.caretPosition,
+            );
+            textarea.scrollTop = textarea.scrollHeight;
+          });
+          return true;
+        }}
       />
     </div>
   );

@@ -1,7 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import React from "react";
+import React, { useState } from "react";
+import { Sparkles } from "lucide-react";
 import { CapsuleCard } from "@/features/capsules/components/CapsuleCard";
 import { LetterComposerForm } from "@/features/capsules/components/LetterComposerForm";
+import {
+  InspireMeDrawer,
+  insertPromptIntoDraft,
+  hasPromptInDraft,
+  removePromptFromDraft,
+} from "@/features/capsules";
 import { INITIAL_SEEDS } from "@/lib/initialSeeds";
 import { useTimeEcho } from "@/lib/context/TimeEchoContext";
 
@@ -45,4 +52,74 @@ export const ComposerForm: Story = {
       <LetterComposerForm />
     </div>
   ),
+};
+
+const InspireMeInteractiveDemo = () => {
+  const { t } = useTimeEcho();
+  const [isOpen, setIsOpen] = useState(true);
+  const [draft, setDraft] = useState("");
+  const [appliedPrompt, setAppliedPrompt] = useState<{
+    id: string;
+    text: string;
+  } | null>(null);
+
+  const activePromptId =
+    appliedPrompt && hasPromptInDraft(draft, appliedPrompt.text)
+      ? appliedPrompt.id
+      : null;
+
+  return (
+    <div className="max-w-2xl mx-auto p-6 space-y-4 paper-sheet rounded-xs border border-crease">
+      <div className="flex items-center justify-between gap-2">
+        <label
+          htmlFor="storybook-inspire-draft"
+          className="text-xs font-letter uppercase tracking-wider font-semibold text-foreground-muted"
+        >
+          {t("letters.content_label")}
+        </label>
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs border border-crease bg-manila/50 hover:border-wax hover:bg-manila text-foreground font-letter text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
+        >
+          <Sparkles size={13} className="text-wax shrink-0" />
+          <span>{t("inspireMe.buttonLabel")}</span>
+        </button>
+      </div>
+
+      <textarea
+        id="storybook-inspire-draft"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={10}
+        maxLength={2000}
+        placeholder={t("letters.content_placeholder_form")}
+        className="w-full p-5 rounded-xs bg-transparent border border-crease font-letter text-sm leading-loose text-foreground placeholder:text-foreground-muted/40 focus:border-wax focus:outline-none"
+      />
+
+      <InspireMeDrawer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        selectedPromptId={activePromptId}
+        onRemovePrompt={() => {
+          if (!appliedPrompt) return;
+          setDraft(removePromptFromDraft(draft, appliedPrompt.text));
+          setAppliedPrompt(null);
+        }}
+        onSelectPrompt={({ promptId, promptText }) => {
+          if (activePromptId) return false;
+          const result = insertPromptIntoDraft(draft, promptText, 2000);
+          if (result.exceedsMaxLength) return false;
+          setDraft(result.content);
+          setAppliedPrompt({ id: promptId, text: promptText.trim() });
+          return true;
+        }}
+      />
+    </div>
+  );
+};
+
+export const InspireMeDrawerStory: Story = {
+  name: "Inspire Me Drawer",
+  render: () => <InspireMeInteractiveDemo />,
 };
