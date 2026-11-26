@@ -24,12 +24,11 @@ import { Slider } from "@/components/ui/Slider";
 import { SocialProof } from "@/features/landing/components/SocialProof";
 import {
   InspireMeDrawer,
+  InspirationPromptLabel,
   InspirePromptSelection,
   DEFAULT_INSPIRATION_CATEGORY_ID,
   InspirationCategoryId,
-  insertPromptIntoDraft,
-  hasPromptInDraft,
-  removePromptFromDraft,
+  getInspirationPromptById,
 } from "@/features/capsules";
 
 export default function HomePage() {
@@ -75,15 +74,9 @@ export default function HomePage() {
   const [isInspireOpen, setIsInspireOpen] = useState<boolean>(false);
   const [activeInspirationCategory, setActiveInspirationCategory] =
     useState<InspirationCategoryId>(DEFAULT_INSPIRATION_CATEGORY_ID);
-  const [appliedPrompt, setAppliedPrompt] = useState<{
-    id: string;
-    text: string;
-  } | null>(null);
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
 
-  const activePromptId =
-    appliedPrompt && hasPromptInDraft(content, appliedPrompt.text)
-      ? appliedPrompt.id
-      : null;
+  const selectedPrompt = getInspirationPromptById(selectedPromptId);
 
   const [predictionCity, setPredictionCity] = useState("");
   const [predictionCareer, setPredictionCareer] = useState("");
@@ -372,6 +365,12 @@ export default function HomePage() {
                   <span>{t("inspireMe.buttonLabel")}</span>
                 </button>
               </div>
+              {selectedPrompt && (
+                <InspirationPromptLabel
+                  promptText={t(selectedPrompt.textKey)}
+                  onRemove={() => setSelectedPromptId(null)}
+                />
+              )}
               <textarea
                 id="landing-content"
                 ref={contentTextareaRef}
@@ -925,35 +924,16 @@ export default function HomePage() {
       <InspireMeDrawer
         isOpen={isInspireOpen}
         onClose={() => setIsInspireOpen(false)}
-        selectedPromptId={activePromptId}
-        onRemovePrompt={() => {
-          if (!appliedPrompt) return;
-          setContent(removePromptFromDraft(content, appliedPrompt.text));
-          setAppliedPrompt(null);
-        }}
+        selectedPromptId={selectedPromptId}
+        onRemovePrompt={() => setSelectedPromptId(null)}
         activeCategoryId={activeInspirationCategory}
         onCategoryChange={setActiveInspirationCategory}
-        onSelectPrompt={({ promptId, promptText }: InspirePromptSelection) => {
-          if (activePromptId) {
-            return false;
-          }
-          const result = insertPromptIntoDraft(content, promptText, 2000);
-          if (result.exceedsMaxLength) {
-            return false;
-          }
-          setContent(result.content);
-          setAppliedPrompt({ id: promptId, text: promptText.trim() });
+        onSelectPrompt={({ promptId }: InspirePromptSelection) => {
+          if (selectedPromptId) return;
+          setSelectedPromptId(promptId);
           requestAnimationFrame(() => {
-            const textarea = contentTextareaRef.current;
-            if (!textarea) return;
-            textarea.focus();
-            textarea.setSelectionRange(
-              result.caretPosition,
-              result.caretPosition,
-            );
-            textarea.scrollTop = textarea.scrollHeight;
+            contentTextareaRef.current?.focus();
           });
-          return true;
         }}
       />
     </div>

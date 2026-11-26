@@ -5,9 +5,8 @@ import { CapsuleCard } from "@/features/capsules/components/CapsuleCard";
 import { LetterComposerForm } from "@/features/capsules/components/LetterComposerForm";
 import {
   InspireMeDrawer,
-  insertPromptIntoDraft,
-  hasPromptInDraft,
-  removePromptFromDraft,
+  InspirationPromptLabel,
+  getInspirationPromptById,
 } from "@/features/capsules";
 import { INITIAL_SEEDS } from "@/lib/initialSeeds";
 import { useTimeEcho } from "@/lib/context/TimeEchoContext";
@@ -58,15 +57,9 @@ const InspireMeInteractiveDemo = () => {
   const { t } = useTimeEcho();
   const [isOpen, setIsOpen] = useState(true);
   const [draft, setDraft] = useState("");
-  const [appliedPrompt, setAppliedPrompt] = useState<{
-    id: string;
-    text: string;
-  } | null>(null);
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
 
-  const activePromptId =
-    appliedPrompt && hasPromptInDraft(draft, appliedPrompt.text)
-      ? appliedPrompt.id
-      : null;
+  const selectedPrompt = getInspirationPromptById(selectedPromptId);
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-4 paper-sheet rounded-xs border border-crease">
@@ -87,6 +80,13 @@ const InspireMeInteractiveDemo = () => {
         </button>
       </div>
 
+      {selectedPrompt && (
+        <InspirationPromptLabel
+          promptText={t(selectedPrompt.textKey)}
+          onRemove={() => setSelectedPromptId(null)}
+        />
+      )}
+
       <textarea
         id="storybook-inspire-draft"
         value={draft}
@@ -100,19 +100,11 @@ const InspireMeInteractiveDemo = () => {
       <InspireMeDrawer
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        selectedPromptId={activePromptId}
-        onRemovePrompt={() => {
-          if (!appliedPrompt) return;
-          setDraft(removePromptFromDraft(draft, appliedPrompt.text));
-          setAppliedPrompt(null);
-        }}
-        onSelectPrompt={({ promptId, promptText }) => {
-          if (activePromptId) return false;
-          const result = insertPromptIntoDraft(draft, promptText, 2000);
-          if (result.exceedsMaxLength) return false;
-          setDraft(result.content);
-          setAppliedPrompt({ id: promptId, text: promptText.trim() });
-          return true;
+        selectedPromptId={selectedPromptId}
+        onRemovePrompt={() => setSelectedPromptId(null)}
+        onSelectPrompt={({ promptId }) => {
+          if (selectedPromptId) return;
+          setSelectedPromptId(promptId);
         }}
       />
     </div>

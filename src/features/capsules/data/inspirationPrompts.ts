@@ -291,3 +291,14 @@ export function getInspirationCategory(
     INSPIRATION_CATEGORIES[0]
   );
 }
+
+export function getInspirationPromptById(
+  promptId: string | null | undefined,
+): InspirationPrompt | undefined {
+  if (!promptId) return undefined;
+  for (const category of INSPIRATION_CATEGORIES) {
+    const match = category.prompts.find((prompt) => prompt.id === promptId);
+    if (match) return match;
+  }
+  return undefined;
+}
