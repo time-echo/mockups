@@ -41,7 +41,13 @@
     "vault": "Vault",
     "waxSealLockedAria": "Wax seal protected in transit",
     "waxSealBreakAria": "Break the carmine wax seal",
-    "breakSeal": "Break seal"
+    "breakSeal": "Break seal",
+    "loader": {
+      "badge": "ARCHIVAL VAULT // SYNCING",
+      "title": "Loading...",
+      "subtitle": "One moment.",
+      "ringText": "TIMEECHO • ARCHIVAL POSTAL VAULT • "
+    }
   },
   "header": {
     "folio": "№ TE-00421",
@@ -289,7 +295,39 @@
     "step3Title": "3. Unlock & Compare",
     "step3Desc": "On the appointed date, receive your sealed letter. Crack the seal, verify your predictions, and trace how you've grown.",
     "step3Text": "When the day arrives, your letter lands in your inbox. Rediscover who you were, see which predictions came true, and reflect on how much you’ve grown.",
-    "startWritingNow": "Start Writing Now"
+    "startWritingNow": "Start Writing Now",
+    "heroTitle": "Write a letter to your future self",
+    "heroTrustLine": "Free · Encrypted · Delivered to your inbox on the date you choose",
+    "heroCta": "Write my letter",
+    "heroRealityDesc": "Write down what you think will happen. When the letter arrives, you'll see what came true and what didn't, next to how you feel now.",
+    "heroExampleLabel": "Example",
+    "freeBadge": "Free",
+    "freeNote": "Sending your letter costs nothing.",
+    "stampHint": "Optional: pick a decorative stamp for your letter.",
+    "letterPlaceholderGuide": "What would you tell yourself {horizon}?\nWhat worries you today? What do you hope to have achieved? What don't you want to forget?",
+    "letterPlaceholderHorizon6m": "6 months from now",
+    "letterPlaceholderHorizon1y": "a year from now",
+    "letterPlaceholderHorizon3y": "3 years from now",
+    "letterPlaceholderHorizon5y": "5 years from now",
+    "letterPlaceholderHorizonCustom": "on {date}",
+    "letterPlaceholderHorizonFuture": "in the future",
+    "counterEmpty": "A few sentences are enough (80 characters minimum)",
+    "counterProgress": "Good start! {remaining} more characters and you can seal it",
+    "counterReady": "{count} / 2000 · ready to seal",
+    "predictionsTitle": "Your predictions",
+    "predictionsHint": "Optional. When you open the letter you'll see which ones came true.",
+    "feelTitle": "How do you feel today?",
+    "feelHint": "You'll compare it with how you feel the day you read it.",
+    "protectTitle": "How do we protect your letter?",
+    "protectIntro": "No jargon: here is what happens to what you write.",
+    "protectQ1": "What does “encrypted” mean?",
+    "protectA1": "Your letter's title, text and predictions are stored as unreadable text that can only be read with a key. If someone looked at our database, they would only find meaningless characters.",
+    "protectQ2": "Who can read it?",
+    "protectA2": "Only you, by signing in with your email when the date arrives. We don't sell your data or show ads. Look after your inbox: anyone with access to your email could open it.",
+    "protectQ3": "When does it open?",
+    "protectA3": "The letter stays locked until the date you chose. On that day we email you a notice so you can open it.",
+    "protectPrivacyLink": "Read the privacy policy",
+    "socialProofLetters": "{count} letters sent"
   },
   "letters": {
     "annex_1": "ANNEX I",
@@ -523,6 +561,8 @@
       "titleLength": "The title must be at least 3 characters.",
       "contentRequired": "Write a message for your future self.",
       "contentLength": "Content must be at least 10 characters.",
+      "contentMinWords": "Content must be at least 10 words.",
+      "wordTooLong": "Content cannot contain words longer than 45 characters.",
       "emailRequired": "Delivery email is required.",
       "emailInvalid": "Please enter a valid email address.",
       "dateRequired": "Please select a valid delivery date.",
@@ -1529,5 +1569,11 @@
     "emptySearchTitle": "No matching stamps",
     "emptySearchDesc": "No stamps found matching your filter criteria or search query.",
     "backToVault": "Back to Vault"
+  },
+  "inspireMe": {
+    "buttonLabel": "Inspire Me",
+    "buttonAria": "Show a random writing inspiration prompt",
+    "activePromptLabel": "Inspiration",
+    "removePrompt": "Remove inspiration"
   }
 }

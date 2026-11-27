@@ -41,7 +41,13 @@
     "vault": "Bóveda",
     "waxSealLockedAria": "Sello de lacre protegido en tránsito",
     "waxSealBreakAria": "Romper sello de lacre carmesí",
-    "breakSeal": "Romper sello"
+    "breakSeal": "Romper sello",
+    "loader": {
+      "badge": "BÓVEDA POSTAL // SINCRONIZANDO",
+      "title": "Cargando...",
+      "subtitle": "Un momento.",
+      "ringText": "TIMEECHO • BÓVEDA POSTAL DE ARCHIVO • "
+    }
   },
   "header": {
     "folio": "№ TE-00421",
@@ -289,7 +295,39 @@
     "step3Title": "3. Desbloquea y Compara",
     "step3Desc": "En la fecha pactada, recibe tu carta sellada. Quiebra el lacre, audita tus predicciones y observa tu transformación.",
     "step3Text": "El día señalado, tu carta llega a tu correo. Reencuéntrate con quién eras, comprueba qué predicciones se cumplieron y descubre cuánto has crecido.",
-    "startWritingNow": "Comenzar a escribir ahora"
+    "startWritingNow": "Comenzar a escribir ahora",
+    "heroTitle": "Escríbele una carta a tu yo del futuro",
+    "heroTrustLine": "Gratis · Cifrada · Llega a tu correo en la fecha que elijas",
+    "heroCta": "Escribir mi carta",
+    "heroRealityDesc": "Anota hoy lo que crees que pasará. Cuando la carta llegue, verás qué se cumplió y qué no, junto a cómo te sientes ahora.",
+    "heroExampleLabel": "Ejemplo",
+    "freeBadge": "Gratis",
+    "freeNote": "Enviar tu carta no cuesta nada.",
+    "stampHint": "Opcional: elige una estampilla decorativa para tu carta.",
+    "letterPlaceholderGuide": "¿Qué le dirías a tu yo {horizon}?\n¿Qué te preocupa hoy? ¿Qué esperas haber logrado? ¿Qué no quieres olvidar?",
+    "letterPlaceholderHorizon6m": "de dentro de 6 meses",
+    "letterPlaceholderHorizon1y": "de dentro de un año",
+    "letterPlaceholderHorizon3y": "de dentro de 3 años",
+    "letterPlaceholderHorizon5y": "de dentro de 5 años",
+    "letterPlaceholderHorizonCustom": "el {date}",
+    "letterPlaceholderHorizonFuture": "del futuro",
+    "counterEmpty": "Unas pocas frases bastan (mínimo 80 caracteres)",
+    "counterProgress": "¡Buen comienzo! Te faltan {remaining} caracteres para poder sellarla",
+    "counterReady": "{count} / 2000 · lista para sellar",
+    "predictionsTitle": "Tus predicciones",
+    "predictionsHint": "Opcional. Cuando abras la carta verás cuáles se cumplieron.",
+    "feelTitle": "¿Cómo te sientes hoy?",
+    "feelHint": "Lo compararás con cómo te sientas el día que la leas.",
+    "protectTitle": "¿Cómo protegemos tu carta?",
+    "protectIntro": "Sin palabras técnicas: esto es lo que pasa con lo que escribes.",
+    "protectQ1": "¿Qué significa «cifrada»?",
+    "protectA1": "El título, el texto y las predicciones de tu carta se guardan como un texto ilegible que solo se puede leer con una clave. Si alguien viera nuestra base de datos, solo encontraría caracteres sin sentido.",
+    "protectQ2": "¿Quién puede leerla?",
+    "protectA2": "Solo tú, entrando con tu correo cuando llega la fecha. No vendemos tus datos ni mostramos anuncios. Cuida tu bandeja de entrada: quien tenga acceso a tu correo podría abrirla.",
+    "protectQ3": "¿Cuándo se abre?",
+    "protectA3": "La carta permanece bloqueada hasta la fecha que elegiste. Ese día te llega un aviso a tu correo para abrirla.",
+    "protectPrivacyLink": "Leer la política de privacidad",
+    "socialProofLetters": "{count} cartas enviadas"
   },
   "letters": {
     "annex_1": "ANEXO I",
@@ -523,6 +561,8 @@
       "titleLength": "El título debe tener al menos 3 caracteres.",
       "contentRequired": "Escribe un mensaje para tu yo del futuro.",
       "contentLength": "El contenido debe tener al menos 10 caracteres.",
+      "contentMinWords": "El contenido debe tener al menos 10 palabras.",
+      "wordTooLong": "El contenido no puede contener palabras de más de 45 caracteres.",
       "emailRequired": "El correo de entrega es requerido.",
       "emailInvalid": "Ingresa un correo electrónico válido.",
       "dateRequired": "Selecciona una fecha de entrega válida.",
@@ -1529,5 +1569,11 @@
     "emptySearchTitle": "Sin resultados coincidentes",
     "emptySearchDesc": "No encontramos estampillas que coincidan con los filtros o la búsqueda.",
     "backToVault": "Volver a la Bóveda"
+  },
+  "inspireMe": {
+    "buttonLabel": "Inspírame",
+    "buttonAria": "Mostrar una idea de inspiración aleatoria para escribir",
+    "activePromptLabel": "Inspiración",
+    "removePrompt": "Quitar inspiración"
   }
 }

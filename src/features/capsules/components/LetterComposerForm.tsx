@@ -1,17 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { useLetterComposer, HorizonPreset } from "@/features/capsules";
 import { ArchivalAccordion } from "@/components/ui/ArchivalAccordion";
+import { ArchivalLoader } from "@/components/ui/ArchivalLoader";
 import { ArchivalDatePicker } from "@/components/ui/ArchivalDatePicker";
-import { WaxSeal } from "@/components/ui/WaxSeal";
 import { useTimeEcho } from "@/lib/context/TimeEchoContext";
 import { Letter, PredictionCategory } from "@/types/timeecho";
-import { Calendar, Mail, AlertCircle } from "lucide-react";
+import { Calendar, Mail, AlertCircle, Sparkles } from "lucide-react";
 import { cn, formatLocaleDate } from "@/lib/utils";
 import { Stamp, StampPickerModal } from "@/components/stamps";
+import { InspirationPromptLabel } from "./InspirationPromptLabel";
+import {
+  getInspirationBySlug,
+  getRandomInspiration,
+  getLocalizedInspirationText,
+} from "../data/inspirationPrompts";
 
 export interface LetterComposerFormProps {
   onSuccess?: (created: Letter) => void;
@@ -68,6 +73,22 @@ export function LetterComposerForm({
   const searchParams = useSearchParams();
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isStampPickerOpen, setIsStampPickerOpen] = useState(false);
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const selectedPrompt = getInspirationBySlug(selectedPromptId);
+
+  const handleInspireMe = () => {
+    const nextPrompt = getRandomInspiration(selectedPromptId);
+    setSelectedPromptId(nextPrompt.slug);
+    requestAnimationFrame(() => {
+      contentTextareaRef.current?.focus();
+    });
+  };
+
+  const handleRemovePrompt = () => {
+    setSelectedPromptId(null);
+  };
 
   useEffect(() => {
     const stampParam = searchParams.get("stamp");
@@ -248,19 +269,41 @@ export function LetterComposerForm({
               )}
             </div>
 
-            {/* Content field */}
             <div className="space-y-2 relative">
-              <label
-                htmlFor="letter_content_area"
-                className="text-xs font-letter uppercase tracking-wider font-semibold text-foreground-muted block"
-              >
-                {t("letters.content_label")} *
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  htmlFor="letter_content_area"
+                  className="text-xs font-letter uppercase tracking-wider font-semibold text-foreground-muted block"
+                >
+                  {t("letters.content_label")} *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleInspireMe}
+                  aria-label={t("inspireMe.buttonAria")}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs border border-crease bg-manila/50 hover:border-wax hover:bg-manila text-foreground font-letter text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
+                >
+                  <Sparkles size={13} className="text-wax shrink-0" />
+                  <span>{t("inspireMe.buttonLabel")}</span>
+                </button>
+              </div>
+              {selectedPrompt && (
+                <InspirationPromptLabel
+                  promptText={getLocalizedInspirationText(
+                    selectedPrompt,
+                    locale,
+                  )}
+                  onRemove={handleRemovePrompt}
+                />
+              )}
               <textarea
                 id="letter_content_area"
+                ref={contentTextareaRef}
                 value={form.content}
                 onChange={(e) => setField("content", e.target.value)}
-                placeholder={t("letters.content_placeholder_form")}
+                placeholder={
+                  selectedPrompt ? "" : t("letters.content_placeholder_form")
+                }
                 rows={15}
                 minLength={80}
                 maxLength={2000}
@@ -626,44 +669,14 @@ export function LetterComposerForm({
         </div>
       </form>
 
-      {/* Wax Sealing Modal Micro-Animation */}
-      <AnimatePresence>
-        {isSealing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="sealing-dialog-title"
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center select-none"
-          >
-            <motion.div
-              initial={{ scale: 0.8, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="p-8 rounded-lg border border-crease bg-parchment max-w-sm w-full space-y-6 shadow-2xl flex flex-col items-center"
-            >
-              <WaxSeal size="lg" isLocked={false} />
-
-              <div className="space-y-2">
-                <h3
-                  id="sealing-dialog-title"
-                  className="font-serif-editorial text-2xl font-bold text-ink"
-                >
-                  {t("composer.sealingVaultModalTitle")}
-                </h3>
-                <p className="font-letter text-xs text-foreground-muted leading-relaxed">
-                  {t("composer.sealingVaultModalDesc")}
-                </p>
-              </div>
-
-              <div className="w-16 h-1 bg-crease rounded-full overflow-hidden">
-                <div className="h-full bg-wax animate-pulse" />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isSealing && (
+        <ArchivalLoader
+          variant="full"
+          className="fixed inset-0 z-50"
+          title={t("composer.sealingVaultModalTitle")}
+          subtitle={t("composer.sealingVaultModalDesc")}
+        />
+      )}
 
       <StampPickerModal
         isOpen={isStampPickerOpen}
