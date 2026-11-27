@@ -11,15 +11,11 @@ import { Letter, PredictionCategory } from "@/types/timeecho";
 import { Calendar, Mail, AlertCircle, Sparkles } from "lucide-react";
 import { cn, formatLocaleDate } from "@/lib/utils";
 import { Stamp, StampPickerModal } from "@/components/stamps";
+import { InspirationPromptLabel } from "./InspirationPromptLabel";
 import {
-  InspireMeDrawer,
-  InspirationPromptLabel,
-  InspirePromptSelection,
-} from "./InspireMeDrawer";
-import {
-  DEFAULT_INSPIRATION_CATEGORY_ID,
-  InspirationCategoryId,
-  getInspirationPromptById,
+  getInspirationBySlug,
+  getRandomInspiration,
+  getLocalizedInspirationText,
 } from "../data/inspirationPrompts";
 
 export interface LetterComposerFormProps {
@@ -77,17 +73,14 @@ export function LetterComposerForm({
   const searchParams = useSearchParams();
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isStampPickerOpen, setIsStampPickerOpen] = useState(false);
-  const [isInspireOpen, setIsInspireOpen] = useState(false);
-  const [activeInspirationCategory, setActiveInspirationCategory] =
-    useState<InspirationCategoryId>(DEFAULT_INSPIRATION_CATEGORY_ID);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const selectedPrompt = getInspirationPromptById(selectedPromptId);
+  const selectedPrompt = getInspirationBySlug(selectedPromptId);
 
-  const handleSelectPrompt = ({ promptId }: InspirePromptSelection) => {
-    if (selectedPromptId) return;
-    setSelectedPromptId(promptId);
+  const handleInspireMe = () => {
+    const nextPrompt = getRandomInspiration(selectedPromptId);
+    setSelectedPromptId(nextPrompt.slug);
     requestAnimationFrame(() => {
       contentTextareaRef.current?.focus();
     });
@@ -286,9 +279,7 @@ export function LetterComposerForm({
                 </label>
                 <button
                   type="button"
-                  onClick={() => setIsInspireOpen(true)}
-                  aria-haspopup="dialog"
-                  aria-expanded={isInspireOpen}
+                  onClick={handleInspireMe}
                   aria-label={t("inspireMe.buttonAria")}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs border border-crease bg-manila/50 hover:border-wax hover:bg-manila text-foreground font-letter text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
                 >
@@ -298,7 +289,10 @@ export function LetterComposerForm({
               </div>
               {selectedPrompt && (
                 <InspirationPromptLabel
-                  promptText={t(selectedPrompt.textKey)}
+                  promptText={getLocalizedInspirationText(
+                    selectedPrompt,
+                    locale,
+                  )}
                   onRemove={handleRemovePrompt}
                 />
               )}
@@ -307,7 +301,9 @@ export function LetterComposerForm({
                 ref={contentTextareaRef}
                 value={form.content}
                 onChange={(e) => setField("content", e.target.value)}
-                placeholder={t("letters.content_placeholder_form")}
+                placeholder={
+                  selectedPrompt ? "" : t("letters.content_placeholder_form")
+                }
                 rows={15}
                 minLength={80}
                 maxLength={2000}
@@ -687,16 +683,6 @@ export function LetterComposerForm({
         onClose={() => setIsStampPickerOpen(false)}
         selectedStampId={form.stampId || undefined}
         onSelectStamp={(id) => setField("stampId", id)}
-      />
-
-      <InspireMeDrawer
-        isOpen={isInspireOpen}
-        onClose={() => setIsInspireOpen(false)}
-        onSelectPrompt={handleSelectPrompt}
-        selectedPromptId={selectedPromptId}
-        onRemovePrompt={handleRemovePrompt}
-        activeCategoryId={activeInspirationCategory}
-        onCategoryChange={setActiveInspirationCategory}
       />
     </div>
   );

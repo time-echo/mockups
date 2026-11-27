@@ -4,9 +4,10 @@ import { Sparkles } from "lucide-react";
 import { CapsuleCard } from "@/features/capsules/components/CapsuleCard";
 import { LetterComposerForm } from "@/features/capsules/components/LetterComposerForm";
 import {
-  InspireMeDrawer,
   InspirationPromptLabel,
-  getInspirationPromptById,
+  getInspirationBySlug,
+  getRandomInspiration,
+  getLocalizedInspirationText,
 } from "@/features/capsules";
 import { INITIAL_SEEDS } from "@/lib/initialSeeds";
 import { useTimeEcho } from "@/lib/context/TimeEchoContext";
@@ -54,12 +55,13 @@ export const ComposerForm: Story = {
 };
 
 const InspireMeInteractiveDemo = () => {
-  const { t } = useTimeEcho();
-  const [isOpen, setIsOpen] = useState(true);
+  const { t, locale } = useTimeEcho();
   const [draft, setDraft] = useState("");
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(
+    "person-to-become",
+  );
 
-  const selectedPrompt = getInspirationPromptById(selectedPromptId);
+  const selectedPrompt = getInspirationBySlug(selectedPromptId);
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-4 paper-sheet rounded-xs border border-crease">
@@ -72,7 +74,10 @@ const InspireMeInteractiveDemo = () => {
         </label>
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            const nextPrompt = getRandomInspiration(selectedPromptId);
+            setSelectedPromptId(nextPrompt.slug);
+          }}
           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs border border-crease bg-manila/50 hover:border-wax hover:bg-manila text-foreground font-letter text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
         >
           <Sparkles size={13} className="text-wax shrink-0" />
@@ -82,7 +87,7 @@ const InspireMeInteractiveDemo = () => {
 
       {selectedPrompt && (
         <InspirationPromptLabel
-          promptText={t(selectedPrompt.textKey)}
+          promptText={getLocalizedInspirationText(selectedPrompt, locale)}
           onRemove={() => setSelectedPromptId(null)}
         />
       )}
@@ -93,25 +98,16 @@ const InspireMeInteractiveDemo = () => {
         onChange={(e) => setDraft(e.target.value)}
         rows={10}
         maxLength={2000}
-        placeholder={t("letters.content_placeholder_form")}
+        placeholder={
+          selectedPrompt ? "" : t("letters.content_placeholder_form")
+        }
         className="w-full p-5 rounded-xs bg-transparent border border-crease font-letter text-sm leading-loose text-foreground placeholder:text-foreground-muted/40 focus:border-wax focus:outline-none"
-      />
-
-      <InspireMeDrawer
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        selectedPromptId={selectedPromptId}
-        onRemovePrompt={() => setSelectedPromptId(null)}
-        onSelectPrompt={({ promptId }) => {
-          if (selectedPromptId) return;
-          setSelectedPromptId(promptId);
-        }}
       />
     </div>
   );
 };
 
-export const InspireMeDrawerStory: Story = {
-  name: "Inspire Me Drawer",
+export const InspireMeLabelStory: Story = {
+  name: "Inspire Me Label",
   render: () => <InspireMeInteractiveDemo />,
 };

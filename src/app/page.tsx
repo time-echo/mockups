@@ -23,12 +23,10 @@ import { ArchivalDatePicker } from "@/components/ui/ArchivalDatePicker";
 import { Slider } from "@/components/ui/Slider";
 import { SocialProof } from "@/features/landing/components/SocialProof";
 import {
-  InspireMeDrawer,
   InspirationPromptLabel,
-  InspirePromptSelection,
-  DEFAULT_INSPIRATION_CATEGORY_ID,
-  InspirationCategoryId,
-  getInspirationPromptById,
+  getInspirationBySlug,
+  getRandomInspiration,
+  getLocalizedInspirationText,
 } from "@/features/capsules";
 
 export default function HomePage() {
@@ -71,12 +69,9 @@ export default function HomePage() {
   const [showCustomDate, setShowCustomDate] = useState<boolean>(false);
   const [selectedStampId, setSelectedStampId] = useState<string | null>(null);
   const [isStampPickerOpen, setIsStampPickerOpen] = useState<boolean>(false);
-  const [isInspireOpen, setIsInspireOpen] = useState<boolean>(false);
-  const [activeInspirationCategory, setActiveInspirationCategory] =
-    useState<InspirationCategoryId>(DEFAULT_INSPIRATION_CATEGORY_ID);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
 
-  const selectedPrompt = getInspirationPromptById(selectedPromptId);
+  const selectedPrompt = getInspirationBySlug(selectedPromptId);
 
   const [predictionCity, setPredictionCity] = useState("");
   const [predictionCareer, setPredictionCareer] = useState("");
@@ -94,6 +89,28 @@ export default function HomePage() {
     new Date().toISOString(),
     locale,
   );
+
+  const letterPlaceholderHorizon = (() => {
+    if (showCustomDate) {
+      if (customDate) {
+        return t("landing.letterPlaceholderHorizonCustom", {
+          date: formatLocaleDate(`${customDate}T12:00:00`, locale),
+        });
+      }
+      return t("landing.letterPlaceholderHorizonFuture");
+    }
+    switch (selectedHorizonDays) {
+      case 180:
+        return t("landing.letterPlaceholderHorizon6m");
+      case 1095:
+        return t("landing.letterPlaceholderHorizon3y");
+      case 1825:
+        return t("landing.letterPlaceholderHorizon5y");
+      case 365:
+      default:
+        return t("landing.letterPlaceholderHorizon1y");
+    }
+  })();
 
   const handlePresetDate = (days: number) => {
     setSelectedHorizonDays(days);
@@ -355,9 +372,13 @@ export default function HomePage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setIsInspireOpen(true)}
-                  aria-haspopup="dialog"
-                  aria-expanded={isInspireOpen}
+                  onClick={() => {
+                    const nextPrompt = getRandomInspiration(selectedPromptId);
+                    setSelectedPromptId(nextPrompt.slug);
+                    requestAnimationFrame(() => {
+                      contentTextareaRef.current?.focus();
+                    });
+                  }}
                   aria-label={t("inspireMe.buttonAria")}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs border border-crease bg-manila/50 hover:border-wax hover:bg-manila text-foreground font-letter text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
                 >
@@ -367,7 +388,10 @@ export default function HomePage() {
               </div>
               {selectedPrompt && (
                 <InspirationPromptLabel
-                  promptText={t(selectedPrompt.textKey)}
+                  promptText={getLocalizedInspirationText(
+                    selectedPrompt,
+                    locale,
+                  )}
                   onRemove={() => setSelectedPromptId(null)}
                 />
               )}
@@ -376,7 +400,13 @@ export default function HomePage() {
                 ref={contentTextareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder={t("landing.letterPlaceholderGuide")}
+                placeholder={
+                  selectedPrompt
+                    ? ""
+                    : t("landing.letterPlaceholderGuide", {
+                        horizon: letterPlaceholderHorizon,
+                      })
+                }
                 rows={7}
                 maxLength={2000}
                 required
@@ -919,22 +949,6 @@ export default function HomePage() {
         onClose={() => setIsStampPickerOpen(false)}
         selectedStampId={selectedStampId || undefined}
         onSelectStamp={(id) => setSelectedStampId(id || null)}
-      />
-
-      <InspireMeDrawer
-        isOpen={isInspireOpen}
-        onClose={() => setIsInspireOpen(false)}
-        selectedPromptId={selectedPromptId}
-        onRemovePrompt={() => setSelectedPromptId(null)}
-        activeCategoryId={activeInspirationCategory}
-        onCategoryChange={setActiveInspirationCategory}
-        onSelectPrompt={({ promptId }: InspirePromptSelection) => {
-          if (selectedPromptId) return;
-          setSelectedPromptId(promptId);
-          requestAnimationFrame(() => {
-            contentTextareaRef.current?.focus();
-          });
-        }}
       />
     </div>
   );
