@@ -1575,5 +1575,49 @@
     "buttonAria": "Show a random writing inspiration prompt",
     "activePromptLabel": "Inspiration",
     "removePrompt": "Remove inspiration"
+  },
+  "specialDates": {
+    "sectionBadge": "SEASONAL CALENDAR",
+    "sectionTitle": "Special Dates",
+    "sectionSubtitle": "Turn meaningful moments into letters to your future self.",
+    "promptsCount": "{count} questions",
+    "exploreCta": "Explore questions",
+    "viewingCta": "Selected",
+    "today": "Today",
+    "ongoing": "In season now",
+    "inDays": "In {days} days",
+    "inOneDay": "Tomorrow",
+    "modalTitle": "Writing questions",
+    "modalSubtitle": "Select the questions that resonate with you to include in your letter.",
+    "selectAll": "Select all",
+    "clearSelection": "Clear",
+    "selectedCount": "{count} selected",
+    "usePrompts": "Use these questions",
+    "usePromptsCount": "Use these questions ({count})",
+    "previewApplied": "{count} questions selected for preview",
+    "closeModal": "Close",
+    "annexBadge": "SPECIAL DATE QUESTIONS",
+    "annexTitle": "Guided questions for {title}",
+    "annexSubtitle": "Answer as many as you like. Your responses are saved privately and encrypted alongside your letter.",
+    "clearAllPrompts": "Remove all",
+    "removePrompt": "Remove question",
+    "maxSelectionsHint": "Choose up to {max}",
+    "types": {
+      "text": "Short answer",
+      "textarea": "Reflection",
+      "radio": "Single choice",
+      "checkbox": "Multi-select",
+      "scale": "Scale"
+    },
+    "categories": {
+      "celebration": "Celebration",
+      "family": "Family",
+      "seasonal": "Seasonal",
+      "cultural": "Cultural",
+      "milestone": "Milestone"
+    },
+    "revealHeading": "Special Date Reflections",
+    "revealSubtitle": "Guided questions you answered for {title} when sealing this letter.",
+    "revealSubtitleGeneric": "Guided questions you answered when sealing this letter."
   }
 }

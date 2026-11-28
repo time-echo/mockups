@@ -1575,5 +1575,49 @@
     "buttonAria": "Mostrar una idea de inspiración aleatoria para escribir",
     "activePromptLabel": "Inspiración",
     "removePrompt": "Quitar inspiración"
+  },
+  "specialDates": {
+    "sectionBadge": "CALENDARIO DE FECHAS",
+    "sectionTitle": "Fechas Especiales",
+    "sectionSubtitle": "Convierte momentos significativos en cartas para tu yo del futuro.",
+    "promptsCount": "{count} preguntas",
+    "exploreCta": "Explorar preguntas",
+    "viewingCta": "Seleccionada",
+    "today": "Hoy",
+    "ongoing": "En temporada",
+    "inDays": "En {days} días",
+    "inOneDay": "Mañana",
+    "modalTitle": "Preguntas para escribir",
+    "modalSubtitle": "Selecciona las preguntas que resuenen contigo para incluirlas en tu carta.",
+    "selectAll": "Seleccionar todas",
+    "clearSelection": "Limpiar",
+    "selectedCount": "{count} seleccionadas",
+    "usePrompts": "Usar estas preguntas",
+    "usePromptsCount": "Usar estas preguntas ({count})",
+    "previewApplied": "{count} preguntas seleccionadas (vista previa)",
+    "closeModal": "Cerrar",
+    "annexBadge": "PREGUNTAS DE FECHA ESPECIAL",
+    "annexTitle": "Reflexiones para {title}",
+    "annexSubtitle": "Responde las que desees. Tus respuestas se guardan cifradas junto con tu carta.",
+    "clearAllPrompts": "Quitar todas",
+    "removePrompt": "Quitar pregunta",
+    "maxSelectionsHint": "Elige hasta {max}",
+    "types": {
+      "text": "Respuesta corta",
+      "textarea": "Reflexión",
+      "radio": "Opción única",
+      "checkbox": "Selección múltiple",
+      "scale": "Escala"
+    },
+    "categories": {
+      "celebration": "Celebración",
+      "family": "Familia",
+      "seasonal": "Temporada",
+      "cultural": "Cultural",
+      "milestone": "Hito"
+    },
+    "revealHeading": "Reflexiones de Fecha Especial",
+    "revealSubtitle": "Preguntas guía que respondiste para {title} al sellar esta carta.",
+    "revealSubtitleGeneric": "Preguntas guía que respondiste al sellar esta carta."
   }
 }

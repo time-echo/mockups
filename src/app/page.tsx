@@ -3,7 +3,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTimeEcho } from "@/lib/context/TimeEchoContext";
-import { PredictionCategory } from "@/types/timeecho";
+import {
+  PredictionCategory,
+  SpecialDateItem,
+  SpecialDatePrompt,
+} from "@/types/timeecho";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -28,6 +32,14 @@ import {
   getRandomInspiration,
   getLocalizedInspirationText,
 } from "@/features/capsules";
+import {
+  SpecialDatesSection,
+  SpecialDatePromptComposer,
+  getSpecialDateBySlug,
+  getInitialDraftForPrompts,
+  PromptAnswerDraftMap,
+  PromptAnswerDraftValue,
+} from "@/features/special-dates";
 
 export default function HomePage() {
   const router = useRouter();
@@ -70,8 +82,64 @@ export default function HomePage() {
   const [selectedStampId, setSelectedStampId] = useState<string | null>(null);
   const [isStampPickerOpen, setIsStampPickerOpen] = useState<boolean>(false);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [activeSpecialDateSlug, setActiveSpecialDateSlug] = useState<
+    string | null
+  >(null);
+  const [selectedSpecialDatePromptSlugs, setSelectedSpecialDatePromptSlugs] =
+    useState<string[]>([]);
+  const [specialDateDrafts, setSpecialDateDrafts] =
+    useState<PromptAnswerDraftMap>({});
 
   const selectedPrompt = getInspirationBySlug(selectedPromptId);
+  const activeSpecialDate = getSpecialDateBySlug(activeSpecialDateSlug, locale);
+  const activeSpecialDatePrompts = activeSpecialDate
+    ? activeSpecialDate.prompts.filter((p) =>
+        selectedSpecialDatePromptSlugs.includes(p.slug),
+      )
+    : [];
+
+  const handleUseSpecialDatePrompts = (
+    specialDate: SpecialDateItem,
+    chosenPrompts: SpecialDatePrompt[],
+  ) => {
+    setActiveSpecialDateSlug(specialDate.slug);
+    setSelectedSpecialDatePromptSlugs(chosenPrompts.map((p) => p.slug));
+    setSpecialDateDrafts((prev) =>
+      getInitialDraftForPrompts(chosenPrompts, prev),
+    );
+    requestAnimationFrame(() => {
+      const annex = document.getElementById("special-date-composer-annex");
+      if (annex) {
+        annex.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        contentTextareaRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    });
+  };
+
+  const handleChangeSpecialDateAnswer = (
+    slug: string,
+    val: PromptAnswerDraftValue,
+  ) => {
+    setSpecialDateDrafts((prev) => ({ ...prev, [slug]: val }));
+  };
+
+  const handleRemoveSpecialDatePrompt = (slug: string) => {
+    setSelectedSpecialDatePromptSlugs((prev) => {
+      const next = prev.filter((s) => s !== slug);
+      if (next.length === 0) setActiveSpecialDateSlug(null);
+      return next;
+    });
+  };
+
+  const handleClearSpecialDatePrompts = () => {
+    setActiveSpecialDateSlug(null);
+    setSelectedSpecialDatePromptSlugs([]);
+    setSpecialDateDrafts({});
+  };
 
   const [predictionCity, setPredictionCity] = useState("");
   const [predictionCareer, setPredictionCareer] = useState("");
@@ -362,6 +430,17 @@ export default function HomePage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {activeSpecialDate && activeSpecialDatePrompts.length > 0 && (
+              <SpecialDatePromptComposer
+                specialDate={activeSpecialDate}
+                prompts={activeSpecialDatePrompts}
+                drafts={specialDateDrafts}
+                onChangeAnswer={handleChangeSpecialDateAnswer}
+                onRemovePrompt={handleRemoveSpecialDatePrompt}
+                onClearAll={handleClearSpecialDatePrompts}
+              />
+            )}
+
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <label
@@ -744,6 +823,8 @@ export default function HomePage() {
       </section>
 
       <SocialProof />
+
+      <SpecialDatesSection onUsePrompts={handleUseSpecialDatePrompts} />
 
       <section className="space-y-10">
         <div className="text-center space-y-2">

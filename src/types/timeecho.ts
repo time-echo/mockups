@@ -101,6 +101,100 @@ export interface Letter {
   /** Associated milestone predictions */
   predictions: Prediction[];
   stampId?: string | null;
+  /** Optional Special Date that inspired this letter */
+  specialDate?: LetterSpecialDateSummary | null;
+  /** Structured answers to Special Date prompts */
+  promptAnswers?: LetterPromptAnswer[];
+}
+
+export type SpecialDateCategory =
+  | "celebration"
+  | "family"
+  | "seasonal"
+  | "cultural"
+  | "milestone";
+
+export type SpecialDatePromptType =
+  | "text"
+  | "textarea"
+  | "radio"
+  | "checkbox"
+  | "scale";
+
+export interface SpecialDatePromptOption {
+  value: string;
+  label: string;
+}
+
+export interface SpecialDatePromptConfig {
+  placeholder?: string;
+  maxLength?: number;
+  maxSelections?: number;
+  min?: number;
+  max?: number;
+  minLabel?: string;
+  maxLabel?: string;
+}
+
+export interface SpecialDatePrompt {
+  slug: string;
+  question: string;
+  questionType: SpecialDatePromptType;
+  options: SpecialDatePromptOption[];
+  config: SpecialDatePromptConfig;
+  position: number;
+}
+
+export interface SpecialDateItem {
+  slug: string;
+  title: string;
+  description: string;
+  category: SpecialDateCategory;
+  illustrationKey: string;
+  countryCode?: string | null;
+  occurrenceDate: string;
+  endDate?: string | null;
+  daysUntil: number;
+  isOngoing: boolean;
+  promptsCount: number;
+  position: number;
+  prompts: SpecialDatePrompt[];
+}
+
+export interface LetterSpecialDateSummary {
+  slug: string;
+  title: string;
+  category: SpecialDateCategory;
+  illustrationKey: string;
+}
+
+export type PromptAnswerPayload =
+  | { text: string }
+  | { value: string; label: string }
+  | { values: string[]; labels: string[] }
+  | {
+      value: number;
+      min: number;
+      max: number;
+      minLabel?: string;
+      maxLabel?: string;
+    };
+
+export interface LetterPromptAnswer {
+  id: string;
+  promptSlug: string;
+  question: string;
+  questionType: SpecialDatePromptType;
+  answer: PromptAnswerPayload;
+  position: number;
+}
+
+export interface LetterPromptAnswerInput {
+  promptSlug: string;
+  question: string;
+  questionType: SpecialDatePromptType;
+  answer: PromptAnswerPayload;
+  position: number;
 }
 
 /**
@@ -143,6 +237,8 @@ export interface CreateLetterInput {
     category: PredictionCategory;
     prediction: string;
   }>;
+  specialDate?: LetterSpecialDateSummary | null;
+  promptAnswers?: LetterPromptAnswerInput[];
 }
 
 export interface UpdateRealityPredictionInput {
